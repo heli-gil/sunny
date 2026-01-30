@@ -2338,3 +2338,145 @@ This Implementation Plan contains everything needed to build Sunny from scratch:
 **Start with Phase 1 and build incrementally. Each phase builds on the previous one.**
 
 Good luck! 🌅
+
+---
+
+# 11. DEPLOYMENT & CONFIGURATION LOG
+
+## 11.1 GitHub Repository
+
+**Repository:** https://github.com/heli-gil/sunny
+**Branch:** main
+
+### Setup Steps:
+1. Install GitHub CLI: `brew install gh`
+2. Authenticate: `gh auth login`
+3. Create repo and push: `gh repo create sunny --public --source=. --push`
+
+---
+
+## 11.2 Vercel Deployment
+
+**Production URLs:**
+- https://sunny-git-main-automation-flows-projects.vercel.app
+- https://sunny-fpwb7brgn-automation-flows-projects.vercel.app
+
+### Environment Variables Required on Vercel:
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://liedsrqsodclsvbsxuqc.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (single line, no spaces!) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (single line, no spaces!) |
+
+**IMPORTANT:** When pasting keys in Vercel, ensure they are a single line with NO spaces or line breaks. Invalid header errors occur if keys contain whitespace.
+
+---
+
+## 11.3 Route Structure Fix
+
+**Issue:** Vercel build failed with `ENOENT: page_client-reference-manifest.js` error.
+
+**Cause:** Route conflict - both `app/page.tsx` and `app/(dashboard)/page.tsx` were trying to serve the `/` route (route groups don't add to URL path).
+
+**Solution:**
+1. Moved `app/(dashboard)/page.tsx` → `app/(dashboard)/dashboard/page.tsx`
+2. Updated `app/page.tsx` to redirect to `/dashboard`:
+```typescript
+import { redirect } from 'next/navigation'
+
+export default function Home() {
+  redirect('/dashboard')
+}
+```
+
+---
+
+## 11.4 Google OAuth Setup
+
+### Supabase Configuration:
+1. **Authentication → Providers → Google** - Enable and add Client ID + Secret
+2. **Authentication → URL Configuration:**
+   - Site URL: `https://sunny-git-main-automation-flows-projects.vercel.app`
+   - Redirect URLs: `https://sunny-git-main-automation-flows-projects.vercel.app/**`
+
+### Google Cloud Console:
+1. Create project at https://console.cloud.google.com
+2. Configure OAuth consent screen (External)
+3. Create OAuth 2.0 Client ID (Web application)
+4. Add Authorized JavaScript origins:
+   - `https://sunny-git-main-automation-flows-projects.vercel.app`
+5. Add Authorized redirect URIs:
+   - `https://liedsrqsodclsvbsxuqc.supabase.co/auth/v1/callback`
+
+---
+
+## 11.5 Auth Callback Error Handling
+
+Enhanced `app/auth/callback/route.ts` to show detailed error messages:
+
+```typescript
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+
+export async function GET(request: Request) {
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
+  const error_param = searchParams.get('error')
+  const error_description = searchParams.get('error_description')
+  const next = searchParams.get('next') ?? '/dashboard'
+
+  // Check for OAuth errors from Supabase
+  if (error_param) {
+    console.error('OAuth error:', error_param, error_description)
+    return NextResponse.redirect(`${origin}/login?error=auth_failed&details=${encodeURIComponent(error_description || error_param)}`)
+  }
+
+  if (code) {
+    const supabase = await createClient()
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`)
+    }
+
+    console.error('Exchange code error:', error.message)
+    return NextResponse.redirect(`${origin}/login?error=auth_failed&details=${encodeURIComponent(error.message)}`)
+  }
+
+  return NextResponse.redirect(`${origin}/login?error=auth_failed&details=no_code`)
+}
+```
+
+---
+
+## 11.6 Files Changed During Deployment
+
+| File | Change |
+|------|--------|
+| `app/page.tsx` | Changed to redirect to `/dashboard` |
+| `app/(dashboard)/dashboard/page.tsx` | Moved from `app/(dashboard)/page.tsx` |
+| `app/auth/callback/route.ts` | Added detailed error logging |
+| `app/(auth)/login/page.tsx` | Shows error details from callback |
+| `vercel.json` | Created for Vercel configuration |
+| `.mcp.json` | Contains MCP server configs (in .gitignore) |
+
+---
+
+## 11.7 Troubleshooting
+
+### "Invalid header value" Error
+**Cause:** Environment variables on Vercel contain line breaks or spaces
+**Fix:** Delete and re-add the variable, pasting as a single line
+
+### "Provider not enabled" Error
+**Cause:** Google OAuth not enabled in Supabase
+**Fix:** Enable in Supabase → Authentication → Providers → Google
+
+### Redirect to localhost:3000
+**Cause:** Supabase Site URL not configured for production
+**Fix:** Update Site URL in Supabase → Authentication → URL Configuration
+
+### Build Failed (route group error)
+**Cause:** Conflicting page.tsx files at same route
+**Fix:** Ensure only one page.tsx serves each route path

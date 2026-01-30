@@ -2480,3 +2480,150 @@ export async function GET(request: Request) {
 ### Build Failed (route group error)
 **Cause:** Conflicting page.tsx files at same route
 **Fix:** Ensure only one page.tsx serves each route path
+
+---
+
+# 12. API ROUTES IMPLEMENTATION
+
+## 12.1 Implemented API Routes
+
+All CRUD API routes are now implemented:
+
+| Route | Methods | Description |
+|-------|---------|-------------|
+| `/api/partners` | GET | List all partners |
+| `/api/categories` | GET, POST | List/create expense categories |
+| `/api/accounts` | GET, POST | List/create payment accounts |
+| `/api/lob` | GET, POST | List/create lines of business |
+| `/api/clients` | GET, POST | List/create clients (includes invoice stats) |
+| `/api/clients/[id]` | PATCH, DELETE | Update/delete client |
+| `/api/transactions` | GET, POST | List/create expenses (year filter) |
+| `/api/transactions/[id]` | PATCH, DELETE | Update/soft-delete expense |
+| `/api/invoices` | GET, POST | List/create invoices (auto-updates overdue) |
+| `/api/invoices/[id]` | PATCH, DELETE | Update/soft-delete invoice |
+| `/api/withdrawals` | GET, POST | List/create partner withdrawals |
+| `/api/withdrawals/[id]` | DELETE | Soft-delete withdrawal |
+| `/api/seed` | POST | Seed database with mock data |
+
+## 12.2 API Features
+
+- **Soft Deletes**: Transactions, invoices, and withdrawals use soft delete (set `deleted_at`)
+- **Auto Overdue**: Invoice GET automatically marks overdue invoices
+- **Exchange Rates**: Transactions/invoices with non-ILS currency use hardcoded rates (USD: 3.65, EUR: 3.95, GBP: 4.55)
+- **Tax Auto-fill**: Transaction POST auto-fills `applied_tax_percent` from category if not provided
+- **Invoice Stats**: Client GET includes computed stats (total_invoiced, total_paid, etc.)
+
+---
+
+# 13. FRONTEND FORMS IMPLEMENTATION
+
+## 13.1 Updated Pages with Working Forms
+
+All pages now have working Add dialogs:
+
+### Configuration Page (`/configuration`)
+- **Categories Tab**: Add category with name, parent category (COGS/OPEX/Financial), tax %
+- **Accounts Tab**: Add account with name, type, optional partner (for Private_Credit)
+- **LOB Tab**: Add line of business with name
+- All tabs show data tables with real-time loading from API
+
+### Clients Page (`/clients`)
+- **Add Client Dialog**: Name, contact info, LOB dropdown, status
+- **Table**: Shows client name, contact, LOB badge, invoiced total, paid total
+- Stats computed from invoice data
+
+### Expenses Page (`/expenses`)
+- **Add Expense Dialog**: Date, supplier, amount, currency, category, account, beneficiary, tax %, notes
+- **Search**: Filter by supplier name or notes
+- **Table**: Account, date, category badge, supplier, beneficiary, amount (ILS + original currency)
+- Auto-fills tax % when category is selected
+
+### Invoices Page (`/invoices`)
+- **Add Invoice Dialog**: Invoice #, client, description, amount, currency, VAT checkbox, dates, status, split %
+- **Summary Cards**: Overdue (red), Sent (blue), Paid (green) with counts and totals
+- **Grouped Lists**: Invoices grouped by status with mark-as-paid button
+- Split % auto-calculates (Heli + Shahar = 100%)
+
+## 13.2 Common Form Features
+
+- All forms use `'use client'` directive
+- State management with `useState` hooks
+- Toast notifications via `sonner` for success/error
+- Loading states while fetching data
+- Empty states when no data exists
+- Form validation before submission
+
+---
+
+# 14. DATABASE SEED DATA
+
+## 14.1 Seed Endpoint
+
+**Endpoint**: `POST /api/seed`
+
+**Usage** (after deployment):
+```bash
+curl -X POST https://sunny-git-main-automation-flows-projects.vercel.app/api/seed
+```
+
+Or in browser console:
+```javascript
+fetch('/api/seed', { method: 'POST' }).then(r => r.json()).then(console.log)
+```
+
+## 14.2 Mock Data Created
+
+| Entity | Count | Details |
+|--------|-------|---------|
+| Partners | 2 | Heli (pink), Shahar (blue) |
+| Categories | 14 | COGS (3), OPEX (9), Financial (2) |
+| Accounts | 5 | Business Bank, 2 Business Cards, 2 Private Cards |
+| Lines of Business | 8 | High-Tech, Legal, Retail, etc. |
+| Clients | 5 | Acme Corp, TechStart Ltd, LegalEase, RetailMax, DataFlow |
+| Invoices | 7 | 3 Paid, 2 Sent, 1 Overdue, 1 Draft |
+| Transactions | 10 | Various categories and currencies |
+| Withdrawals | 3 | 2 for Heli, 1 for Shahar |
+
+## 14.3 Sample Invoices
+
+| Invoice # | Client | Amount | Status |
+|-----------|--------|--------|--------|
+| INV-2026-001 | Acme Corp | ₪15,000 | Paid |
+| INV-2026-002 | TechStart Ltd | ₪25,000 | Paid |
+| INV-2026-003 | LegalEase | ₪8,000 | Paid |
+| INV-2026-004 | RetailMax | ₪20,000 | Sent |
+| INV-2026-005 | DataFlow Systems | ₪12,000 | Sent |
+| INV-2026-006 | Acme Corp | ₪5,000 | Overdue |
+| INV-2026-007 | TechStart Ltd | ₪30,000 | Draft |
+
+## 14.4 Sample Expenses
+
+| Date | Supplier | Amount | Category |
+|------|----------|--------|----------|
+| Jan 5 | OpenAI | $20 | Software (COGS) |
+| Jan 5 | n8n Cloud | $50 | Software (COGS) |
+| Jan 8 | Facebook Ads | ₪500 | Marketing (OPEX) |
+| Jan 18 | Freelance Developer | ₪3,000 | Subcontractors (COGS) |
+| Jan 20 | Accountant | ₪800 | Professional Services (OPEX) |
+
+---
+
+# 15. REMAINING WORK
+
+## 15.1 Not Yet Implemented
+
+- [ ] Dashboard page with computed stats
+- [ ] Partners page with balance calculations
+- [ ] Analytics page with charts
+- [ ] Edit functionality for existing records
+- [ ] Delete functionality with confirmation
+- [ ] Year selector in sidebar (currently hardcoded to 2026)
+- [ ] Partner balance calculation algorithm
+- [ ] Real exchange rate API integration
+
+## 15.2 Known Issues
+
+- Exchange rates are hardcoded (USD: 3.65, EUR: 3.95, GBP: 4.55)
+- Year filter is hardcoded to 2026 in some pages
+- No edit/delete buttons on table rows yet
+- Dashboard shows placeholder data

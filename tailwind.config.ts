@@ -57,8 +57,8 @@ const config: Config = {
   				DEFAULT: '#5ac8fa'
   			},
   			business: {
-  				'50': 'rgba(100, 210, 255, 0.15)',
-  				DEFAULT: '#64d2ff'
+  				'50': 'rgba(191, 90, 242, 0.15)',
+  				DEFAULT: '#bf5af2'
   			},
   			cogs: {
   				'50': 'rgba(255, 107, 107, 0.15)',

@@ -18,7 +18,7 @@ const BENEFICIARIES = ['Business', 'Heli', 'Shahar'] as const
 const PARTNER_COLORS = {
   Heli: '#ff6b9d',      // Pink
   Shahar: '#5ac8fa',    // Blue
-  Business: '#64d2ff',  // Cyan
+  Business: '#bf5af2',  // Purple
 } as const
 
 export default function ExpensesPage() {

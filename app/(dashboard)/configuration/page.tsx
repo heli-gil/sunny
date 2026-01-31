@@ -43,7 +43,7 @@ const LOB_ICONS: { value: string; label: string; Icon: LucideIcon }[] = [
 const ICON_COLORS = [
   { value: '#ff6b9d', label: 'Pink' },
   { value: '#5ac8fa', label: 'Blue' },
-  { value: '#64d2ff', label: 'Cyan' },
+  { value: '#bf5af2', label: 'Cyan' },
   { value: '#30d158', label: 'Green' },
   { value: '#ff9500', label: 'Orange' },
   { value: '#bf5af2', label: 'Purple' },
@@ -90,13 +90,13 @@ export default function ConfigurationPage() {
 
   // Form states for adding
   const [categoryForm, setCategoryForm] = useState({ name: '', parent_category: 'OPEX', tax_recognition_percent: '100', description: '' })
-  const [accountForm, setAccountForm] = useState({ name: '', type: 'Business_Credit', partner_id: '', icon: 'CreditCard', icon_color: '#64d2ff' })
-  const [lobForm, setLobForm] = useState({ name: '', icon: 'Briefcase', icon_color: '#64d2ff' })
+  const [accountForm, setAccountForm] = useState({ name: '', type: 'Business_Credit', partner_id: '', icon: 'CreditCard', icon_color: '#bf5af2' })
+  const [lobForm, setLobForm] = useState({ name: '', icon: 'Briefcase', icon_color: '#bf5af2' })
 
   // Form states for editing
   const [editCategoryForm, setEditCategoryForm] = useState<{ id: string; name: string; parent_category: string; tax_recognition_percent: string; description: string }>({ id: '', name: '', parent_category: 'OPEX', tax_recognition_percent: '100', description: '' })
-  const [editAccountForm, setEditAccountForm] = useState<{ id: string; name: string; type: string; partner_id: string; icon: string; icon_color: string }>({ id: '', name: '', type: 'Business_Credit', partner_id: '', icon: 'CreditCard', icon_color: '#64d2ff' })
-  const [editLobForm, setEditLobForm] = useState<{ id: string; name: string; icon: string; icon_color: string }>({ id: '', name: '', icon: 'Briefcase', icon_color: '#64d2ff' })
+  const [editAccountForm, setEditAccountForm] = useState<{ id: string; name: string; type: string; partner_id: string; icon: string; icon_color: string }>({ id: '', name: '', type: 'Business_Credit', partner_id: '', icon: 'CreditCard', icon_color: '#bf5af2' })
+  const [editLobForm, setEditLobForm] = useState<{ id: string; name: string; icon: string; icon_color: string }>({ id: '', name: '', icon: 'Briefcase', icon_color: '#bf5af2' })
 
   useEffect(() => {
     fetchData()
@@ -166,7 +166,7 @@ export default function ConfigurationPage() {
       if (!res.ok) throw new Error('Failed to add account')
       toast.success('Account added')
       setAccountDialogOpen(false)
-      setAccountForm({ name: '', type: 'Business_Credit', partner_id: '', icon: 'CreditCard', icon_color: '#64d2ff' })
+      setAccountForm({ name: '', type: 'Business_Credit', partner_id: '', icon: 'CreditCard', icon_color: '#bf5af2' })
       fetchData()
     } catch {
       toast.error('Failed to add account')
@@ -187,7 +187,7 @@ export default function ConfigurationPage() {
       if (!res.ok) throw new Error('Failed to add LOB')
       toast.success('Line of Business added')
       setLobDialogOpen(false)
-      setLobForm({ name: '', icon: 'Briefcase', icon_color: '#64d2ff' })
+      setLobForm({ name: '', icon: 'Briefcase', icon_color: '#bf5af2' })
       fetchData()
     } catch {
       toast.error('Failed to add Line of Business')
@@ -213,7 +213,7 @@ export default function ConfigurationPage() {
       type: acc.type,
       partner_id: acc.partner_id || '',
       icon: acc.icon || 'CreditCard',
-      icon_color: acc.icon_color || '#64d2ff',
+      icon_color: acc.icon_color || '#bf5af2',
     })
     setEditAccountDialogOpen(true)
   }
@@ -223,7 +223,7 @@ export default function ConfigurationPage() {
       id: lob.id,
       name: lob.name,
       icon: lob.icon || 'Briefcase',
-      icon_color: lob.icon_color || '#64d2ff',
+      icon_color: lob.icon_color || '#bf5af2',
     })
     setEditLobDialogOpen(true)
   }
@@ -557,8 +557,8 @@ export default function ConfigurationPage() {
                     return (
                       <tr key={acc.id} className="border-b border-border/50 hover:bg-white/[0.02] transition-colors">
                         <td className="p-4">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${acc.icon_color || '#64d2ff'}20` }}>
-                            <IconComponent className="w-4 h-4" style={{ color: acc.icon_color || '#64d2ff' }} />
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${acc.icon_color || '#bf5af2'}20` }}>
+                            <IconComponent className="w-4 h-4" style={{ color: acc.icon_color || '#bf5af2' }} />
                           </div>
                         </td>
                         <td className="p-4">{acc.name}</td>
@@ -672,8 +672,8 @@ export default function ConfigurationPage() {
                     return (
                       <tr key={lob.id} className="border-b border-border/50 hover:bg-white/[0.02] transition-colors">
                         <td className="p-4">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${lob.icon_color || '#64d2ff'}20` }}>
-                            <IconComponent className="w-4 h-4" style={{ color: lob.icon_color || '#64d2ff' }} />
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${lob.icon_color || '#bf5af2'}20` }}>
+                            <IconComponent className="w-4 h-4" style={{ color: lob.icon_color || '#bf5af2' }} />
                           </div>
                         </td>
                         <td className="p-4">{lob.name}</td>

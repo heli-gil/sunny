@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       type: body.type,
       partner_id: body.partner_id || null,
       icon: body.icon || 'CreditCard',
-      icon_color: body.icon_color || '#64d2ff',
+      icon_color: body.icon_color || '#bf5af2',
     })
     .select()
     .single()

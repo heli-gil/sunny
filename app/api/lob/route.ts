@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     .insert({
       name: body.name,
       icon: body.icon || 'Briefcase',
-      icon_color: body.icon_color || '#64d2ff',
+      icon_color: body.icon_color || '#bf5af2',
     })
     .select()
     .single()

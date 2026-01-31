@@ -2914,6 +2914,44 @@ This file must be run in Supabase SQL Editor before the app can function.
 
 ---
 
+## 2026-01-31 - Icons & Colors for LOB + Configuration UI Enhancements
+
+### Changes Made:
+- Fixed expenses page bug: changed hardcoded `year=2026` to dynamic `new Date().getFullYear()`
+- Added icon/icon_color support to Accounts and Lines of Business:
+  - Added icon and icon_color columns to TypeScript types
+  - API routes now handle icon/icon_color in POST and PATCH operations
+- Enhanced Configuration page:
+  - Accounts table displays icons with customizable colors
+  - LOB table displays icons with customizable colors
+  - Add/Edit dialogs for both Accounts and LOB now include icon and color selectors
+  - Icon options: CreditCard, Building2, Wallet, Banknote, PiggyBank, CircleDollarSign, Briefcase, ShoppingBag, Scale, Cpu, Megaphone, Heart, Landmark, GraduationCap, Building
+  - Color options: Pink, Blue, Cyan, Green, Orange, Purple, Red, Yellow, Gray
+- Updated Clients page:
+  - LOB badges now display with each LOB's unique icon and color (instead of hardcoded purple)
+  - Added dynamic icon rendering using ICON_MAP lookup
+
+### Files Modified:
+- `types/index.ts` - Added icon/icon_color to Account and LineOfBusiness interfaces
+- `app/(dashboard)/configuration/page.tsx` - Full UI update with icon/color editing
+- `app/(dashboard)/clients/page.tsx` - Dynamic LOB icon and color display
+- `app/(dashboard)/expenses/page.tsx` - Fixed dynamic year calculation
+- `app/api/accounts/route.ts` - Added icon/icon_color to POST
+- `app/api/accounts/[id]/route.ts` - Added icon/icon_color to PATCH
+- `app/api/lob/route.ts` - Added icon/icon_color to POST
+- `app/api/lob/[id]/route.ts` - Added icon/icon_color to PATCH
+
+### Supabase Migrations Applied:
+- `add_icon_columns_to_accounts` - Added icon/icon_color to accounts table
+- `add_icon_columns_to_lob` - Added icon/icon_color to lines_of_business table
+
+### Notes:
+- Build passes successfully
+- TypeScript type check passes
+- Pushed to production (Vercel)
+
+---
+
 # 19. DEVELOPMENT WORKFLOW (CLAUDE_HOOKS)
 
 ## Pre-Task Checklist:

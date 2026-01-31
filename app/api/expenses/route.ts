@@ -48,6 +48,18 @@ export async function POST(request: Request) {
   const supabase = await createClient()
   const body = await request.json()
 
+  // Get authenticated user and their partner ID
+  const { data: { user } } = await supabase.auth.getUser()
+  let createdBy = null
+  if (user?.email) {
+    const { data: partner } = await supabase
+      .from('partners')
+      .select('id')
+      .eq('email', user.email)
+      .single()
+    createdBy = partner?.id || null
+  }
+
   // Get exchange rate if currency is not ILS
   let exchangeRate = 1.0
   if (body.currency !== 'ILS') {
@@ -86,7 +98,7 @@ export async function POST(request: Request) {
         start_date: body.date,
         end_date: body.recurrence_end_date || null,
         last_generated_date: body.date, // Mark this month as already generated
-        created_by: body.created_by || null,
+        created_by: createdBy,
       })
       .select()
       .single()
@@ -115,7 +127,7 @@ export async function POST(request: Request) {
       invoice_url: body.invoice_url || null,
       notes: body.notes || null,
       recurring_expense_id: recurringExpenseId,
-      created_by: body.created_by || null,
+      created_by: createdBy,
     })
     .select('*, category:categories(*), account:accounts(*), client:clients(*)')
     .single()

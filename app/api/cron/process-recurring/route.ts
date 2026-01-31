@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getExchangeRate } from '@/lib/exchange-rates'
 
 export async function POST(request: Request) {
   // Verify cron secret (optional security measure)
@@ -51,12 +52,8 @@ export async function POST(request: Request) {
       continue
     }
 
-    // Get exchange rate if currency is not ILS
-    let exchangeRate = 1.0
-    if (rec.currency !== 'ILS') {
-      const rates: Record<string, number> = { USD: 3.65, EUR: 3.95, GBP: 4.55 }
-      exchangeRate = rates[rec.currency] || 1.0
-    }
+    // Get exchange rate for today's date
+    const exchangeRate = await getExchangeRate(rec.currency, todayStr)
 
     // Create the expense
     const { error: insertError } = await supabase

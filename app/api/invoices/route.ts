@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getExchangeRate } from '@/lib/exchange-rates'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -59,12 +60,8 @@ export async function POST(request: Request) {
   const supabase = await createClient()
   const body = await request.json()
 
-  // Get exchange rate if currency is not ILS
-  let exchangeRate = 1.0
-  if (body.currency !== 'ILS') {
-    const rates: Record<string, number> = { USD: 3.65, EUR: 3.95, GBP: 4.55 }
-    exchangeRate = rates[body.currency] || 1.0
-  }
+  // Get exchange rate for the invoice date
+  const exchangeRate = await getExchangeRate(body.currency || 'ILS', body.date_issued)
 
   const { data, error } = await supabase
     .from('invoices')

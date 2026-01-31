@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Search, CreditCard, Building2, User, Wallet, Bot, Calendar, Repeat } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Plus, Search, CreditCard, Building2, User, Wallet, Bot, Calendar, Repeat, Pencil, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 import type { Transaction, Category, Account } from '@/types'
@@ -28,11 +28,14 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
+  const [selectedYear, setSelectedYear] = useState<string>('all')
+  const [availableYears, setAvailableYears] = useState<number[]>([])
 
-  // Generate year options (current year back to 2024, plus "All Time")
-  const currentYear = new Date().getFullYear()
-  const yearOptions = ['all', ...Array.from({ length: currentYear - 2023 }, (_, i) => (currentYear - i).toString())]
+  // Edit/Delete state
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<Transaction | null>(null)
+  const [deletingExpense, setDeletingExpense] = useState<Transaction | null>(null)
 
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -49,6 +52,18 @@ export default function ExpensesPage() {
     recurrence_end_date: '',
   })
 
+  const [editForm, setEditForm] = useState({
+    date: '',
+    supplier_name: '',
+    amount: '',
+    currency: 'ILS',
+    category_id: '',
+    account_id: '',
+    beneficiary: 'Business',
+    applied_tax_percent: '',
+    notes: '',
+  })
+
   useEffect(() => {
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -58,19 +73,22 @@ export default function ExpensesPage() {
     setLoading(true)
     try {
       const yearParam = selectedYear === 'all' ? '' : `year=${selectedYear}`
-      const [txnRes, catRes, accRes] = await Promise.all([
+      const [txnRes, catRes, accRes, yearsRes] = await Promise.all([
         fetch(`/api/expenses${yearParam ? `?${yearParam}` : ''}`),
         fetch('/api/categories'),
         fetch('/api/accounts'),
+        fetch('/api/expenses/years'),
       ])
-      const [txnData, catData, accData] = await Promise.all([
+      const [txnData, catData, accData, yearsData] = await Promise.all([
         txnRes.json(),
         catRes.json(),
         accRes.json(),
+        yearsRes.json(),
       ])
       setTransactions(txnData.data || [])
       setCategories(catData.data || [])
       setAccounts(accData.data || [])
+      setAvailableYears(yearsData.data || [])
     } catch (error) {
       console.error('Failed to fetch data:', error)
     }
@@ -135,6 +153,83 @@ export default function ExpensesPage() {
       ...form,
       category_id: categoryId,
       applied_tax_percent: category ? String(Math.round(category.tax_recognition_percent * 100)) : '',
+    })
+  }
+
+  // Open edit dialog with expense data
+  function openEditDialog(expense: Transaction) {
+    setEditingExpense(expense)
+    setEditForm({
+      date: expense.date,
+      supplier_name: expense.supplier_name,
+      amount: String(expense.amount),
+      currency: expense.currency,
+      category_id: expense.category_id,
+      account_id: expense.account_id,
+      beneficiary: expense.beneficiary,
+      applied_tax_percent: expense.applied_tax_percent ? String(Math.round(expense.applied_tax_percent * 100)) : '',
+      notes: expense.notes || '',
+    })
+    setEditDialogOpen(true)
+  }
+
+  // Handle edit expense
+  async function handleEditExpense() {
+    if (!editingExpense) return
+    if (!editForm.supplier_name || !editForm.amount || !editForm.category_id || !editForm.account_id) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+    try {
+      const res = await fetch(`/api/expenses/${editingExpense.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: editForm.date,
+          supplier_name: editForm.supplier_name,
+          amount: parseFloat(editForm.amount),
+          currency: editForm.currency,
+          category_id: editForm.category_id,
+          account_id: editForm.account_id,
+          beneficiary: editForm.beneficiary,
+          applied_tax_percent: editForm.applied_tax_percent ? parseFloat(editForm.applied_tax_percent) / 100 : undefined,
+          notes: editForm.notes || null,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to update expense')
+      toast.success('Expense updated')
+      setEditDialogOpen(false)
+      setEditingExpense(null)
+      fetchData()
+    } catch {
+      toast.error('Failed to update expense')
+    }
+  }
+
+  // Handle delete expense
+  async function handleDeleteExpense() {
+    if (!deletingExpense) return
+    try {
+      const res = await fetch(`/api/expenses/${deletingExpense.id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('Failed to delete expense')
+      toast.success('Expense deleted')
+      setDeleteDialogOpen(false)
+      setDeletingExpense(null)
+      fetchData()
+    } catch {
+      toast.error('Failed to delete expense')
+    }
+  }
+
+  // Auto-fill tax percent when category changes (edit form)
+  function handleEditCategoryChange(categoryId: string) {
+    const category = categories.find(c => c.id === categoryId)
+    setEditForm({
+      ...editForm,
+      category_id: categoryId,
+      applied_tax_percent: category ? String(Math.round(category.tax_recognition_percent * 100)) : editForm.applied_tax_percent,
     })
   }
 
@@ -417,9 +512,10 @@ export default function ExpensesPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {yearOptions.map((year) => (
-              <SelectItem key={year} value={year}>
-                {year === 'all' ? 'All Time' : year}
+            <SelectItem value="all">All Time</SelectItem>
+            {availableYears.map((year) => (
+              <SelectItem key={year} value={String(year)}>
+                {year}
               </SelectItem>
             ))}
           </SelectContent>
@@ -445,6 +541,7 @@ export default function ExpensesPage() {
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">For</th>
                 <th className="text-right p-4 text-sm font-medium text-muted-foreground">Amount</th>
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">Added By</th>
+                <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -490,12 +587,201 @@ export default function ExpensesPage() {
                   <td className="p-4 text-sm">
                     {getCreatorDisplay(txn)}
                   </td>
+                  <td className="p-4 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        onClick={() => openEditDialog(txn)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                        onClick={() => {
+                          setDeletingExpense(txn)
+                          setDeleteDialogOpen(true)
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+
+      {/* Edit Expense Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Expense</DialogTitle>
+            <DialogDescription>
+              Update the expense details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4 max-h-[70vh] overflow-y-auto">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date *</Label>
+                <Input
+                  type="date"
+                  value={editForm.date}
+                  onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Supplier *</Label>
+                <Input
+                  value={editForm.supplier_name}
+                  onChange={(e) => setEditForm({ ...editForm, supplier_name: e.target.value })}
+                  placeholder="e.g., OpenAI"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Amount *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editForm.amount}
+                  onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <Select value={editForm.currency} onValueChange={(v) => setEditForm({ ...editForm, currency: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Category *</Label>
+              <Select value={editForm.category_id} onValueChange={handleEditCategoryChange}>
+                <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      <div className="flex items-center gap-3">
+                        <CategoryTag parentCategory={c.parent_category} />
+                        <span className="text-sm">{c.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Payment Account *</Label>
+              <Select value={editForm.account_id} onValueChange={(v) => setEditForm({ ...editForm, account_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
+                <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      <div className="flex items-center gap-2">
+                        {getAccountIcon(a)}
+                        <span>{a.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Beneficiary</Label>
+                <Select value={editForm.beneficiary} onValueChange={(v) => setEditForm({ ...editForm, beneficiary: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {BENEFICIARIES.map((b) => (
+                      <SelectItem key={b} value={b}>
+                        <div className="flex items-center gap-2">
+                          {getBeneficiaryIcon(b)}
+                          <span>{b}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Tax Recognition %</Label>
+                <Input
+                  type="number"
+                  value={editForm.applied_tax_percent}
+                  onChange={(e) => setEditForm({ ...editForm, applied_tax_percent: e.target.value })}
+                  placeholder="100"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Input
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                placeholder="Optional notes"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEditExpense} className="bg-blue hover:bg-blue/90">
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Expense</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this expense? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deletingExpense && (
+            <div className="py-4 space-y-2">
+              <p className="text-sm">
+                <span className="text-muted-foreground">Supplier:</span>{' '}
+                <span className="font-medium">{deletingExpense.supplier_name}</span>
+              </p>
+              <p className="text-sm">
+                <span className="text-muted-foreground">Amount:</span>{' '}
+                <span className="font-medium">{formatCurrency(deletingExpense.amount, deletingExpense.currency)}</span>
+              </p>
+              <p className="text-sm">
+                <span className="text-muted-foreground">Date:</span>{' '}
+                <span className="font-medium">{formatDate(deletingExpense.date)}</span>
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteExpense}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

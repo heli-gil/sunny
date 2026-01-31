@@ -2999,6 +2999,34 @@ This file must be run in Supabase SQL Editor before the app can function.
 
 ---
 
+## 2026-01-31 - Edit/Delete Buttons + Dynamic Year Filter
+
+### New Features:
+- **Edit/Delete buttons in expenses table**: Added Actions column with Pencil and Trash2 icons
+- **Edit Expense modal**: Pre-populated form with all expense fields
+- **Delete confirmation dialog**: Shows expense details before confirming deletion
+- **Dynamic year filter**: Year dropdown now shows only years that have expenses in the database (instead of hardcoded list)
+
+### Files Created:
+- `app/api/expenses/years/route.ts` - Returns list of unique years from expenses table
+
+### Files Modified:
+- `app/(dashboard)/expenses/page.tsx`:
+  - Added Pencil, Trash2, DialogDescription, DialogFooter imports
+  - Added edit/delete state: editDialogOpen, deleteDialogOpen, editingExpense, deletingExpense, editForm
+  - Added openEditDialog(), handleEditExpense(), handleDeleteExpense(), handleEditCategoryChange() functions
+  - Added Actions column header and buttons in table rows
+  - Added Edit Expense dialog with full form
+  - Added Delete confirmation dialog
+  - Year selector now fetches available years from `/api/expenses/years` endpoint
+
+### Notes:
+- Build passes successfully
+- Soft delete pattern maintained (DELETE endpoint sets deleted_at)
+- Edit modal matches Add Expense modal styling
+
+---
+
 # 19. DEVELOPMENT WORKFLOW (CLAUDE_HOOKS)
 
 ## Pre-Task Checklist:

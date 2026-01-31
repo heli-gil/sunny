@@ -32,6 +32,8 @@ export async function PATCH(
     .from('lines_of_business')
     .update({
       name: body.name,
+      icon: body.icon,
+      icon_color: body.icon_color,
     })
     .eq('id', params.id)
     .select()

@@ -34,6 +34,8 @@ export async function PATCH(
       name: body.name,
       type: body.type,
       partner_id: body.partner_id || null,
+      icon: body.icon,
+      icon_color: body.icon_color,
     })
     .eq('id', params.id)
     .select()

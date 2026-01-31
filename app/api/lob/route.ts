@@ -25,6 +25,8 @@ export async function POST(request: Request) {
     .from('lines_of_business')
     .insert({
       name: body.name,
+      icon: body.icon || 'Briefcase',
+      icon_color: body.icon_color || '#64d2ff',
     })
     .select()
     .single()

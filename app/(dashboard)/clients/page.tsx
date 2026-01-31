@@ -6,7 +6,18 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Building2 } from 'lucide-react'
+import { Plus, Building2, Briefcase, ShoppingBag, Scale, Cpu, Megaphone, Heart, Landmark, GraduationCap, Building } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
+// Icon map for dynamic lookup
+const ICON_MAP: Record<string, LucideIcon> = {
+  Briefcase, ShoppingBag, Scale, Cpu, Megaphone, Heart, Landmark, GraduationCap, Building, Building2
+}
+
+// Get icon component by name
+function getIconComponent(iconName: string): LucideIcon {
+  return ICON_MAP[iconName] || Briefcase
+}
 import { toast } from 'sonner'
 import type { Client, LineOfBusiness } from '@/types'
 
@@ -158,11 +169,26 @@ export default function ClientsPage() {
                   </td>
                   <td className="p-4 text-muted-foreground">{client.contact_info || '-'}</td>
                   <td className="p-4">
-                    {client.lob ? (
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-purple/20 text-purple">
-                        {client.lob.name}
-                      </span>
-                    ) : '-'}
+                    {client.lob ? (() => {
+                      const lobColor = client.lob.icon_color || '#bf5af2'
+                      const IconComponent = getIconComponent(client.lob.icon || 'Briefcase')
+                      return (
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-6 h-6 rounded flex items-center justify-center"
+                            style={{ backgroundColor: `${lobColor}20` }}
+                          >
+                            <IconComponent className="w-3 h-3" style={{ color: lobColor }} />
+                          </div>
+                          <span
+                            className="px-2 py-1 rounded text-xs font-medium"
+                            style={{ backgroundColor: `${lobColor}20`, color: lobColor }}
+                          >
+                            {client.lob.name}
+                          </span>
+                        </div>
+                      )
+                    })() : '-'}
                   </td>
                   <td className="p-4 text-right">{formatCurrency(client.stats?.total_invoiced || 0)}</td>
                   <td className="p-4 text-right text-green">{formatCurrency(client.stats?.total_paid || 0)}</td>

@@ -7,7 +7,55 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, CreditCard, Building2, Wallet, Banknote, PiggyBank, CircleDollarSign, Briefcase, ShoppingBag, Scale, Cpu, Megaphone, Heart, Landmark, GraduationCap, Building } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
+// Icon map for dynamic lookup
+const ICON_MAP: Record<string, LucideIcon> = {
+  CreditCard, Building2, Wallet, Banknote, PiggyBank, CircleDollarSign,
+  Briefcase, ShoppingBag, Scale, Cpu, Megaphone, Heart, Landmark, GraduationCap, Building
+}
+
+// Available icons for accounts
+const ACCOUNT_ICONS: { value: string; label: string; Icon: LucideIcon }[] = [
+  { value: 'CreditCard', label: 'Credit Card', Icon: CreditCard },
+  { value: 'Building2', label: 'Bank', Icon: Building2 },
+  { value: 'Wallet', label: 'Wallet', Icon: Wallet },
+  { value: 'Banknote', label: 'Banknote', Icon: Banknote },
+  { value: 'PiggyBank', label: 'Piggy Bank', Icon: PiggyBank },
+  { value: 'CircleDollarSign', label: 'Dollar', Icon: CircleDollarSign },
+]
+
+// Available icons for LOB
+const LOB_ICONS: { value: string; label: string; Icon: LucideIcon }[] = [
+  { value: 'Briefcase', label: 'Briefcase', Icon: Briefcase },
+  { value: 'ShoppingBag', label: 'Retail', Icon: ShoppingBag },
+  { value: 'Scale', label: 'Legal', Icon: Scale },
+  { value: 'Cpu', label: 'Tech', Icon: Cpu },
+  { value: 'Megaphone', label: 'Marketing', Icon: Megaphone },
+  { value: 'Heart', label: 'Healthcare', Icon: Heart },
+  { value: 'Landmark', label: 'Finance', Icon: Landmark },
+  { value: 'GraduationCap', label: 'Education', Icon: GraduationCap },
+  { value: 'Building', label: 'Real Estate', Icon: Building },
+]
+
+// Available colors
+const ICON_COLORS = [
+  { value: '#ff6b9d', label: 'Pink' },
+  { value: '#5ac8fa', label: 'Blue' },
+  { value: '#64d2ff', label: 'Cyan' },
+  { value: '#30d158', label: 'Green' },
+  { value: '#ff9500', label: 'Orange' },
+  { value: '#bf5af2', label: 'Purple' },
+  { value: '#ff3b30', label: 'Red' },
+  { value: '#ffd60a', label: 'Yellow' },
+  { value: '#8e8e93', label: 'Gray' },
+]
+
+// Get icon component by name
+function getIconComponent(iconName: string): LucideIcon {
+  return ICON_MAP[iconName] || Briefcase
+}
 import { toast } from 'sonner'
 import type { Category, Account, LineOfBusiness, Partner } from '@/types'
 
@@ -42,13 +90,13 @@ export default function ConfigurationPage() {
 
   // Form states for adding
   const [categoryForm, setCategoryForm] = useState({ name: '', parent_category: 'OPEX', tax_recognition_percent: '100', description: '' })
-  const [accountForm, setAccountForm] = useState({ name: '', type: 'Business_Credit', partner_id: '' })
-  const [lobForm, setLobForm] = useState({ name: '' })
+  const [accountForm, setAccountForm] = useState({ name: '', type: 'Business_Credit', partner_id: '', icon: 'CreditCard', icon_color: '#64d2ff' })
+  const [lobForm, setLobForm] = useState({ name: '', icon: 'Briefcase', icon_color: '#64d2ff' })
 
   // Form states for editing
   const [editCategoryForm, setEditCategoryForm] = useState<{ id: string; name: string; parent_category: string; tax_recognition_percent: string; description: string }>({ id: '', name: '', parent_category: 'OPEX', tax_recognition_percent: '100', description: '' })
-  const [editAccountForm, setEditAccountForm] = useState<{ id: string; name: string; type: string; partner_id: string }>({ id: '', name: '', type: 'Business_Credit', partner_id: '' })
-  const [editLobForm, setEditLobForm] = useState<{ id: string; name: string }>({ id: '', name: '' })
+  const [editAccountForm, setEditAccountForm] = useState<{ id: string; name: string; type: string; partner_id: string; icon: string; icon_color: string }>({ id: '', name: '', type: 'Business_Credit', partner_id: '', icon: 'CreditCard', icon_color: '#64d2ff' })
+  const [editLobForm, setEditLobForm] = useState<{ id: string; name: string; icon: string; icon_color: string }>({ id: '', name: '', icon: 'Briefcase', icon_color: '#64d2ff' })
 
   useEffect(() => {
     fetchData()
@@ -111,12 +159,14 @@ export default function ConfigurationPage() {
           name: accountForm.name,
           type: accountForm.type,
           partner_id: accountForm.partner_id || null,
+          icon: accountForm.icon,
+          icon_color: accountForm.icon_color,
         }),
       })
       if (!res.ok) throw new Error('Failed to add account')
       toast.success('Account added')
       setAccountDialogOpen(false)
-      setAccountForm({ name: '', type: 'Business_Credit', partner_id: '' })
+      setAccountForm({ name: '', type: 'Business_Credit', partner_id: '', icon: 'CreditCard', icon_color: '#64d2ff' })
       fetchData()
     } catch {
       toast.error('Failed to add account')
@@ -128,12 +178,16 @@ export default function ConfigurationPage() {
       const res = await fetch('/api/lob', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: lobForm.name }),
+        body: JSON.stringify({
+          name: lobForm.name,
+          icon: lobForm.icon,
+          icon_color: lobForm.icon_color,
+        }),
       })
       if (!res.ok) throw new Error('Failed to add LOB')
       toast.success('Line of Business added')
       setLobDialogOpen(false)
-      setLobForm({ name: '' })
+      setLobForm({ name: '', icon: 'Briefcase', icon_color: '#64d2ff' })
       fetchData()
     } catch {
       toast.error('Failed to add Line of Business')
@@ -158,6 +212,8 @@ export default function ConfigurationPage() {
       name: acc.name,
       type: acc.type,
       partner_id: acc.partner_id || '',
+      icon: acc.icon || 'CreditCard',
+      icon_color: acc.icon_color || '#64d2ff',
     })
     setEditAccountDialogOpen(true)
   }
@@ -166,6 +222,8 @@ export default function ConfigurationPage() {
     setEditLobForm({
       id: lob.id,
       name: lob.name,
+      icon: lob.icon || 'Briefcase',
+      icon_color: lob.icon_color || '#64d2ff',
     })
     setEditLobDialogOpen(true)
   }
@@ -200,6 +258,8 @@ export default function ConfigurationPage() {
           name: editAccountForm.name,
           type: editAccountForm.type,
           partner_id: editAccountForm.partner_id || null,
+          icon: editAccountForm.icon,
+          icon_color: editAccountForm.icon_color,
         }),
       })
       if (!res.ok) throw new Error('Failed to update account')
@@ -216,7 +276,11 @@ export default function ConfigurationPage() {
       const res = await fetch(`/api/lob/${editLobForm.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editLobForm.name }),
+        body: JSON.stringify({
+          name: editLobForm.name,
+          icon: editLobForm.icon,
+          icon_color: editLobForm.icon_color,
+        }),
       })
       if (!res.ok) throw new Error('Failed to update LOB')
       toast.success('Line of Business updated')
@@ -432,6 +496,40 @@ export default function ConfigurationPage() {
                       </Select>
                     </div>
                   )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Icon</Label>
+                      <Select value={accountForm.icon} onValueChange={(v) => setAccountForm({ ...accountForm, icon: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ACCOUNT_ICONS.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              <div className="flex items-center gap-2">
+                                <item.Icon className="w-4 h-4" />
+                                <span>{item.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Color</Label>
+                      <Select value={accountForm.icon_color} onValueChange={(v) => setAccountForm({ ...accountForm, icon_color: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ICON_COLORS.map((color) => (
+                            <SelectItem key={color.value} value={color.value}>
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color.value }} />
+                                <span>{color.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <Button onClick={handleAddAccount} className="w-full bg-blue hover:bg-blue/90">Add Account</Button>
                 </div>
               </DialogContent>
@@ -446,6 +544,7 @@ export default function ConfigurationPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Icon</th>
                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Name</th>
                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Type</th>
                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Partner</th>
@@ -453,29 +552,37 @@ export default function ConfigurationPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {accounts.map((acc) => (
-                    <tr key={acc.id} className="border-b border-border/50 hover:bg-white/[0.02] transition-colors">
-                      <td className="p-4">{acc.name}</td>
-                      <td className="p-4">{acc.type.replace(/_/g, ' ')}</td>
-                      <td className="p-4">{acc.partner?.name || '-'}</td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openEditAccount(acc)}
-                            className="p-2 hover:bg-white/10 rounded-md transition-colors"
-                          >
-                            <Pencil className="w-4 h-4 text-muted-foreground hover:text-white" />
-                          </button>
-                          <button
-                            onClick={() => openDeleteDialog('account', acc.id, acc.name)}
-                            className="p-2 hover:bg-red/10 rounded-md transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4 text-muted-foreground hover:text-red" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {accounts.map((acc) => {
+                    const IconComponent = getIconComponent(acc.icon || 'CreditCard')
+                    return (
+                      <tr key={acc.id} className="border-b border-border/50 hover:bg-white/[0.02] transition-colors">
+                        <td className="p-4">
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${acc.icon_color || '#64d2ff'}20` }}>
+                            <IconComponent className="w-4 h-4" style={{ color: acc.icon_color || '#64d2ff' }} />
+                          </div>
+                        </td>
+                        <td className="p-4">{acc.name}</td>
+                        <td className="p-4">{acc.type.replace(/_/g, ' ')}</td>
+                        <td className="p-4">{acc.partner?.name || '-'}</td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openEditAccount(acc)}
+                              className="p-2 hover:bg-white/10 rounded-md transition-colors"
+                            >
+                              <Pencil className="w-4 h-4 text-muted-foreground hover:text-white" />
+                            </button>
+                            <button
+                              onClick={() => openDeleteDialog('account', acc.id, acc.name)}
+                              className="p-2 hover:bg-red/10 rounded-md transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4 text-muted-foreground hover:text-red" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             )}
@@ -506,6 +613,40 @@ export default function ConfigurationPage() {
                       placeholder="e.g., High-Tech"
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Icon</Label>
+                      <Select value={lobForm.icon} onValueChange={(v) => setLobForm({ ...lobForm, icon: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {LOB_ICONS.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              <div className="flex items-center gap-2">
+                                <item.Icon className="w-4 h-4" />
+                                <span>{item.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Color</Label>
+                      <Select value={lobForm.icon_color} onValueChange={(v) => setLobForm({ ...lobForm, icon_color: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ICON_COLORS.map((color) => (
+                            <SelectItem key={color.value} value={color.value}>
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color.value }} />
+                                <span>{color.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <Button onClick={handleAddLob} className="w-full bg-blue hover:bg-blue/90">Add Line of Business</Button>
                 </div>
               </DialogContent>
@@ -520,32 +661,41 @@ export default function ConfigurationPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Icon</th>
                     <th className="text-left p-4 text-sm font-medium text-muted-foreground">Name</th>
                     <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {lobs.map((lob) => (
-                    <tr key={lob.id} className="border-b border-border/50 hover:bg-white/[0.02] transition-colors">
-                      <td className="p-4">{lob.name}</td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openEditLob(lob)}
-                            className="p-2 hover:bg-white/10 rounded-md transition-colors"
-                          >
-                            <Pencil className="w-4 h-4 text-muted-foreground hover:text-white" />
-                          </button>
-                          <button
-                            onClick={() => openDeleteDialog('lob', lob.id, lob.name)}
-                            className="p-2 hover:bg-red/10 rounded-md transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4 text-muted-foreground hover:text-red" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {lobs.map((lob) => {
+                    const IconComponent = getIconComponent(lob.icon || 'Briefcase')
+                    return (
+                      <tr key={lob.id} className="border-b border-border/50 hover:bg-white/[0.02] transition-colors">
+                        <td className="p-4">
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${lob.icon_color || '#64d2ff'}20` }}>
+                            <IconComponent className="w-4 h-4" style={{ color: lob.icon_color || '#64d2ff' }} />
+                          </div>
+                        </td>
+                        <td className="p-4">{lob.name}</td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openEditLob(lob)}
+                              className="p-2 hover:bg-white/10 rounded-md transition-colors"
+                            >
+                              <Pencil className="w-4 h-4 text-muted-foreground hover:text-white" />
+                            </button>
+                            <button
+                              onClick={() => openDeleteDialog('lob', lob.id, lob.name)}
+                              className="p-2 hover:bg-red/10 rounded-md transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4 text-muted-foreground hover:text-red" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             )}
@@ -638,6 +788,40 @@ export default function ConfigurationPage() {
                 </Select>
               </div>
             )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Icon</Label>
+                <Select value={editAccountForm.icon} onValueChange={(v) => setEditAccountForm({ ...editAccountForm, icon: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ACCOUNT_ICONS.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        <div className="flex items-center gap-2">
+                          <item.Icon className="w-4 h-4" />
+                          <span>{item.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Color</Label>
+                <Select value={editAccountForm.icon_color} onValueChange={(v) => setEditAccountForm({ ...editAccountForm, icon_color: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ICON_COLORS.map((color) => (
+                      <SelectItem key={color.value} value={color.value}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color.value }} />
+                          <span>{color.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <Button onClick={handleEditAccount} className="w-full bg-blue hover:bg-blue/90">Save Changes</Button>
           </div>
         </DialogContent>
@@ -656,6 +840,40 @@ export default function ConfigurationPage() {
                 value={editLobForm.name}
                 onChange={(e) => setEditLobForm({ ...editLobForm, name: e.target.value })}
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Icon</Label>
+                <Select value={editLobForm.icon} onValueChange={(v) => setEditLobForm({ ...editLobForm, icon: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {LOB_ICONS.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        <div className="flex items-center gap-2">
+                          <item.Icon className="w-4 h-4" />
+                          <span>{item.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Color</Label>
+                <Select value={editLobForm.icon_color} onValueChange={(v) => setEditLobForm({ ...editLobForm, icon_color: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ICON_COLORS.map((color) => (
+                      <SelectItem key={color.value} value={color.value}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color.value }} />
+                          <span>{color.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <Button onClick={handleEditLob} className="w-full bg-blue hover:bg-blue/90">Save Changes</Button>
           </div>

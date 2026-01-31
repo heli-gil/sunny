@@ -47,8 +47,9 @@ export default function ExpensesPage() {
   async function fetchData() {
     setLoading(true)
     try {
+      const currentYear = new Date().getFullYear()
       const [txnRes, catRes, accRes] = await Promise.all([
-        fetch('/api/transactions?year=2026'),
+        fetch(`/api/transactions?year=${currentYear}`),
         fetch('/api/categories'),
         fetch('/api/accounts'),
       ])

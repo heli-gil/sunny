@@ -28,6 +28,8 @@ export async function POST(request: Request) {
       name: body.name,
       type: body.type,
       partner_id: body.partner_id || null,
+      icon: body.icon || 'CreditCard',
+      icon_color: body.icon_color || '#64d2ff',
     })
     .select()
     .single()
